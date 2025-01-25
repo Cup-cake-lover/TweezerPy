@@ -1,14 +1,13 @@
-import os
+
 import cv2
+import csv
 import numpy as np
 from pathlib import Path
 import matplotlib
 import matplotlib.pyplot as plt
+matplotlib.use('TkAgg')
 
-matplotlib.use("TkAgg")
-
-
-class ScalingFactorCalculator:
+class ScalingFactorHelperFunctions:
     def __init__(self):
         pass
 
@@ -30,9 +29,7 @@ class ScalingFactorCalculator:
         Applies preprocessing to an image, including blurring, thresholding, and edge enhancement.
         """
         blurred_image = cv2.GaussianBlur(image, (5, 5), 0)
-        _, thresholded_image = cv2.threshold(
-            blurred_image, 20, 45, cv2.THRESH_BINARY_INV
-        )
+        _, thresholded_image = cv2.threshold(blurred_image, 20, 45, cv2.THRESH_BINARY_INV)
         edges_enhanced = cv2.Canny(thresholded_image, 50, 150, apertureSize=3)
         line_image_enhanced = cv2.cvtColor(image[:, :, 2], cv2.COLOR_GRAY2BGR)
         return [blurred_image, thresholded_image, edges_enhanced, line_image_enhanced]
@@ -44,16 +41,11 @@ class ScalingFactorCalculator:
         lines_enhanced = cv2.HoughLines(edges_enhanced, 1, np.pi / 180, 130)
         return lines_enhanced
 
-    def draw_and_plot(
-        self,
-        blurred_image: np.ndarray,
-        thresholded_image: np.ndarray,
-        enhanced_image: np.ndarray,
-        line_image_enhanced: np.ndarray,
-        lines_enhanced: np.ndarray,
-    ) -> None:
+    def draw_and_plot(self, blurred_image: np.ndarray, thresholded_image: np.ndarray,
+                      enhanced_image: np.ndarray, line_image_enhanced: np.ndarray,
+                      lines_enhanced: np.ndarray) -> None:
         """
-        Draws lines on the enhanced image and plots the blurred, thresholded,
+        Draws lines on the enhanced image and plots the blurred, thresholded, 
         and enhanced images with detected lines.
         """
         # Draw lines on the enhanced image
@@ -90,26 +82,19 @@ class ScalingFactorCalculator:
         plt.tight_layout()
         plt.show()
 
-    def calculate_distances(self, lines: np.ndarray, axis="x") -> list:
+    def calculate_distances(self, lines: np.ndarray, axis='x') -> list:
         """
         Calculates distances between detected lines along the specified axis (x or y).
         """
-        if axis == "x":
-            vertical_lines = [
-                line for line in lines[:, 0] if abs(line[1] - np.pi / 2) > 0.5
-            ]
-        elif axis == "y":
-            vertical_lines = [
-                line for line in lines[:, 0] if abs(line[1] - np.pi / 2) < 0.5
-            ]
+        if axis == 'x':
+            vertical_lines = [line for line in lines[:, 0] if abs(line[1] - np.pi / 2) > 0.5]
+        elif axis == 'y':
+            vertical_lines = [line for line in lines[:, 0] if abs(line[1] - np.pi / 2) < 0.5]
         else:
             raise ValueError("Axis must be 'x' or 'y'")
 
         vertical_lines.sort(key=lambda x: x[0])
-        distances = [
-            abs(vertical_lines[i + 1][0] - vertical_lines[i][0])
-            for i in range(len(vertical_lines) - 1)
-        ]
+        distances = [abs(vertical_lines[i + 1][0] - vertical_lines[i][0]) for i in range(len(vertical_lines) - 1)]
         distances = 1e-6 / np.array(distances)
         return distances
 
@@ -117,41 +102,154 @@ class ScalingFactorCalculator:
 class TrackerHelperFunctions:
     def __init__(self):
         pass
-
-    def calculate_msd(self, values):
+    
+            
+    def calculate_msd(self,values: np.ndarray) -> np.ndarray:
         values = np.array(values)
         N = len(values)
         msd = np.zeros(N)
         for tau in range(N):
-            differences = values[tau:] - values[: N - tau]
+            differences = values[tau:] - values[:N-tau]
             msd[tau] = np.mean(differences**2)
         return msd
-
-    def plot_msd(self, msd_x, msd_y):
+    
+    def plot_msd(self,msd_x:np.ndarray,msd_y:np.ndarray) -> None:
         mean_msdx = msd_x.mean()
         mean_msdy = msd_y.mean()
 
         fig, axes = plt.subplots(1, 2, figsize=(15, 5))
 
-        # Plot Center_X MSD
+# Plot Center_X MSD
         axes[0].plot(msd_x)
-        axes[0].axhline(
-            mean_msdx, color="r", linestyle="--", label=f"Mean: {mean_msdx:.2f}"
-        )
-        axes[0].set_title("X MSD over Frames")
-        axes[0].set_xlabel(r"$\tau$")
-        axes[0].set_ylabel("MSD")
+        axes[0].axhline(mean_msdx, color='r', linestyle='--', label=f'Mean: {mean_msdx:.2f}')
+        axes[0].set_title('X MSD over Frames')
+        axes[0].set_xlabel(r'$\tau$')
+        axes[0].set_ylabel('MSD')
         axes[0].legend()
 
-        # Plot Center_Y MSD
+# Plot Center_Y MSD
         axes[1].plot(msd_y)
-        axes[1].axhline(
-            mean_msdy, color="r", linestyle="--", label=f"Mean: {mean_msdy:.2f}"
-        )
-        axes[1].set_title("Y MSD over Frames")
-        axes[1].set_xlabel(r"$\tau$")
-        axes[1].set_ylabel("MSD")
+        axes[1].axhline(mean_msdy, color='r', linestyle='--', label=f'Mean: {mean_msdy:.2f}')
+        axes[1].set_title('Y MSD over Frames')
+        axes[1].set_xlabel(r'$\tau$')
+        axes[1].set_ylabel('MSD')
         axes[1].legend()
 
         plt.tight_layout()
         plt.show()
+        
+
+class ObjectTracker:
+    def __init__(self, tracker_type="CSRT"):
+        """
+        Initialize the tracker.
+        :param tracker_type: Type of tracker to use (default is CSRT).
+        """
+        if tracker_type == "CSRT":
+            self.tracker = cv2.legacy.TrackerCSRT_create()
+        else:
+            raise ValueError(f"Unsupported tracker type: {tracker_type}")
+        self.bbox = None
+
+    def select_roi_from_first_image(self, image_folder: str):
+        """
+        Automatically selects the first image in the folder and allows manual ROI selection.
+        :param image_folder: Path to the folder containing images.
+        """
+        image_folder_path = Path(image_folder)
+
+        # Ensure folder exists and is not empty
+        if not image_folder_path.is_dir():
+            raise NotADirectoryError(f"{image_folder_path} is not a valid directory.")
+        image_files = sorted(image_folder_path.iterdir())
+        if not image_files:
+            raise FileNotFoundError(f"No images found in {image_folder_path}.")
+
+        # Select the first image
+        first_frame_path = image_files[0]
+        first_frame = cv2.imread(str(first_frame_path))
+        if first_frame is None:
+            raise FileNotFoundError(f"Error loading the first image: {first_frame_path}")
+
+        # Manually select ROI
+        self.bbox = cv2.selectROI("Select ROI", first_frame, fromCenter=False, showCrosshair=True)
+        cv2.destroyWindow("Select ROI")
+
+        # Initialize the tracker with the first frame and ROI
+        self.tracker.init(first_frame, self.bbox)
+
+    def set_roi(self, bbox):
+        """
+        Set the ROI directly without manual selection.
+        :param bbox: Tuple (x, y, width, height).
+        """
+        self.bbox = bbox
+
+    def track_and_save(self, image_folder: str, csv_file: str):
+        """
+        Track object across images and save coordinates to a CSV file.
+        :param image_folder: Folder containing image frames.
+        :param csv_file: Path to save the CSV file.
+        """
+        image_folder_path = Path(image_folder)
+        csv_file_path = Path(csv_file)
+
+        # Validate image folder
+        if not image_folder_path.is_dir():
+            raise NotADirectoryError(f"{image_folder_path} is not a valid directory.")
+
+        image_files = sorted(image_folder_path.iterdir())
+        if not image_files:
+            raise FileNotFoundError(f"No images found in {image_folder_path}.")
+
+        # Use the first image as the initial frame
+        first_frame_path = image_files[0]
+        first_frame = cv2.imread(str(first_frame_path))
+        if first_frame is None:
+            raise FileNotFoundError(f"Error loading the first image: {first_frame_path}")
+
+        if self.bbox is None:
+            raise ValueError("ROI not set. Use 'select_roi_from_first_image' or 'set_roi' to define ROI.")
+
+        # Initialize tracker
+        self.tracker.init(first_frame, self.bbox)
+
+        # CSV file to save coordinates
+        with csv_file_path.open(mode="w", newline="") as file:
+            writer = csv.writer(file)
+            writer.writerow(["Frame", "Center_X", "Center_Y"])  # Write header row
+
+            # Iterate through frames and track ROI
+            for frame_file in image_files:
+                frame = cv2.imread(str(frame_file))
+                if frame is None:
+                    print(f"Error loading image: {frame_file}")
+                    continue
+
+                # Update the tracker
+                success, bbox = self.tracker.update(frame)
+
+                # Draw the tracking result
+                if success:
+                    x, y, w, h = [int(v) for v in bbox]
+                    center_x, center_y = x + w // 2, y + h // 2  # Calculate center coordinates
+
+                    # Draw the rectangle and center point
+                    cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+                    cv2.circle(frame, (center_x, center_y), 5, (255, 0, 0), -1)
+
+                    # Save coordinates to the CSV file
+                    writer.writerow([frame_file.name, center_x, center_y])
+                else:
+                    cv2.putText(frame, "Tracking failed!", (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0, 0, 255), 2)
+                    writer.writerow([frame_file.name, "Failed", "Failed"])  # Mark failure in CSV
+
+                # Display the frame
+                cv2.imshow("Tracking", frame)
+
+                # Exit if 'q' is pressed
+                if cv2.waitKey(1) & 0xFF == ord('q'):
+                    break
+
+        cv2.destroyAllWindows()
+        print(f"Tracking complete. Coordinates saved to {csv_file_path}.")
