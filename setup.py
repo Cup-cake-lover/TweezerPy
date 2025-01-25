@@ -1,4 +1,5 @@
 from setuptools import setup, find_packages
+import versioneer
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
@@ -7,7 +8,8 @@ with open("requirements.txt", "r") as fh:
 
 setup(
     name="TweezerPy",
-    version="0.1",
+    version=versioneer.get_version(),
+    cmdclass=versioneer.get_cmdclass(),
     include_package_data=True,
     python_requires='>=3.8',
     packages=find_packages(),
