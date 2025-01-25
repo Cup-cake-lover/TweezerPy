@@ -1,0 +1,22 @@
+# Include the README file
+include README.md
+
+# Include the LICENSE file
+include LICENSE
+
+# Include the requirements file
+include requirements.txt
+
+# Include all Python files in the package
+recursive-include TweezerPy *.py
+
+# Include specific file types in your package
+recursive-include TweezerPy *.txt *.csv *.md *.json
+
+# Include all subdirectories, like __pycache__ (optional if distributing compiled Python files)
+prune **/__pycache__
+
+# Exclude temporary or unnecessary files
+global-exclude *.pyc
+global-exclude *.pyo
+global-exclude .DS_Store

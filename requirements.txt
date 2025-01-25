@@ -1,0 +1,5 @@
+setuptools
+numpy
+opencv-contrib-python
+matplotlib
+pandas
