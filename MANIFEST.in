@@ -7,6 +7,8 @@ include LICENSE
 # Include the requirements file
 include requirements.txt
 
+include logo.png
+
 include-include Example_images *.tif
 # Include all Python files in the package
 recursive-include TweezerPy *.py
