@@ -50,7 +50,7 @@ tracker.track_and_save("path/to/image_folder", "output.csv")
 
 Running `tracker.select_roi_from_first_image("path/to/image_folder")` will prompt you to window where you select the 'Region of Interest'; ROI. Afterwards pressing space will directly start the tracking and saves in the output filename provided.
 
-![Sample image](/Example_images/test_image.tif)
+![Sample image](/Example_images/test_image.png)
 
 ### Scaling Factor Calculation 
 
