@@ -1,6 +1,10 @@
 
 # TweezerPy
 
+![Ver](https://img.shields.io/badge/Version-0.0.1-blue)
+
+![logo](logo.png)
+
 TweezerPy is a Python package designed for analyzing and tracking objects in optical tweezer experiments. It provides tools for object tracking, scaling factor calculations, and Mean Squared Displacement (MSD) analysis.
 
 ## Features
